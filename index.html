@@ -315,6 +315,13 @@
         document.getElementById('sortMenu').classList.toggle('show');
     }
 
+    // Helper to handle special symbols in search
+    function normalizeString(str) {
+        return str.toLowerCase()
+                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Removes accents
+                  .replace(/[^a-z0-9 ]/g, ''); // Removes special symbols
+    }
+
     async function loadDatabase() {
         try {
             const response = await fetch('database.html');
@@ -355,19 +362,23 @@
     });
 
     function processData() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
+        const query = normalizeString(document.getElementById('searchInput').value);
         
         filteredItems = allItems.filter(i => {
             const matchCat = currentFilter === 'all' || i.cat.toLowerCase().includes(currentFilter);
-            return matchCat && i.name.toLowerCase().includes(query);
+            const matchQuery = normalizeString(i.name).includes(query);
+            return matchCat && matchQuery;
         });
 
         if (currentSort === 'az') {
             filteredItems.sort((a,b) => a.name.localeCompare(b.name));
         } else if (currentSort === 'random') {
             filteredItems.sort(() => Math.random() - 0.5);
-        } else if (currentSort === 'oldest') {
+        } else if (currentSort === 'latest') {
+            // FIX: Reverses to show newest items (bottom of file) first
             filteredItems.reverse();
+        } else if (currentSort === 'oldest') {
+            // FIX: Original order is oldest first, so we do nothing
         }
 
         currentIndex = 0;
